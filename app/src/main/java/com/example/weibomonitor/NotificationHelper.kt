@@ -7,24 +7,30 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.Build
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 
 object NotificationHelper {
     private const val CHANNEL_ID = "weibo_monitor_channel"
 
     fun showNotification(context: Context, post: WeiboPost) {
         createChannel(context)
-        val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(post.url))
-        val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(post.userName)
-            .setContentText(post.content.take(30))
-            .setStyle(NotificationCompat.BigTextStyle().bigText(post.content))
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-        NotificationManagerCompat.from(context).notify(post.id.hashCode(), builder.build())
+        // 检查通知权限
+        if (Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(post.url))
+            val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle(post.userName)
+                .setContentText(post.content.take(30))
+                .setStyle(NotificationCompat.BigTextStyle().bigText(post.content))
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+            NotificationManagerCompat.from(context).notify(post.id.hashCode(), builder.build())
+        }
     }
 
     private fun createChannel(context: Context) {
